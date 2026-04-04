@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rechorder</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: monospace;
+            padding: 1rem;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .cheatsheet {
+            width: 200px;
+            flex-shrink: 0;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #444;
+            border-right: 1px solid #ccc;
+            padding-right: 1rem;
+        }
+        .cheatsheet h4 {
+            color: #000;
+            margin: 0.6rem 0 0.15rem;
+        }
+        .cheatsheet h4:first-child { margin-top: 0; }
+        .cheatsheet code { background: #eee; padding: 0 0.2rem; }
+        .easing-list { display: flex; flex-direction: column; gap: 2px; }
+        .easing-row { display: flex; align-items: center; gap: 4px; }
+        .easing-row code { font-size: 10px; }
+        .easing-row canvas { flex-shrink: 0; }
+
+        .main { flex: 1; min-width: 0; }
+
+        h1 { margin-bottom: 0.75rem; }
+        h3 { margin-top: 1rem; margin-bottom: 0.25rem; }
+
+        #editor {
+            width: 100%;
+            border: 1px solid #ccc;
+        }
+        #editor .cm-editor {
+            max-height: 12rem;
+            font-size: 14px;
+        }
+        #editor .cm-editor.cm-focused { outline: 2px solid #4a90d9; }
+        #editor .cm-scroller { overflow: auto; }
+
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin: 0.75rem 0;
+            flex-wrap: wrap;
+        }
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        button, select {
+            font-family: monospace;
+            font-size: 14px;
+            padding: 0.25rem 0.75rem;
+            cursor: pointer;
+        }
+
+        #position {
+            margin-left: auto;
+            color: #555;
+        }
+
+        .dual-range {
+            position: relative;
+            display: inline-block;
+            width: 140px;
+            height: 18px;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+        .dual-range::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #ccc;
+            transform: translateY(-50%);
+            border-radius: 2px;
+        }
+        .dual-range input[type="range"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 18px;
+            margin: 0;
+            padding: 0;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            pointer-events: none;
+        }
+        .dual-range input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            pointer-events: all;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #555;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+        .dual-range input[type="range"]::-moz-range-thumb {
+            pointer-events: all;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #555;
+            border: 1px solid #333;
+            cursor: pointer;
+        }
+
+
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        .section-header button {
+            font-size: 11px;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .timeline-wrap {
+            width: 100%;
+            position: relative;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            margin-top: 0.25rem;
+        }
+        .timeline-wrap canvas {
+            display: block;
+            width: 100%;
+            cursor: pointer;
+        }
+        .timeline-playhead {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            background: #d00;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #parseErrors {
+            font-size: 12px;
+            color: #c00;
+            min-height: 0;
+            padding: 0 0.1rem;
+        }
+
+        .intro {
+            margin-bottom: 0.75rem;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .intro-format {
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+        .intro-format code {
+            background: #eee;
+            padding: 0 0.2rem;
+        }
+        .intro-example {
+            font-size: 15px;
+            font-weight: bold;
+            letter-spacing: 0.01em;
+            margin-bottom: 0.4rem;
+            line-height: 1.8;
+        }
+        .ie-label { color: #777; }
+        .ie-n1    { color: #2979FF; border-bottom: 2px solid #2979FF; }
+        .ie-slide { color: #E65100; border-bottom: 2px solid #E65100; }
+        .ie-n2    { color: #00897B; border-bottom: 2px solid #00897B; }
+        .ie-n3    { color: #8E24AA; border-bottom: 2px solid #8E24AA; }
+        .ie-sep   { color: #222; font-weight: 900; padding: 0 2px; }
+        .intro-desc {
+            font-size: 12px;
+            line-height: 1.7;
+        }
+        .intro-desc span { font-weight: bold; }
+        .id-label { color: #777; }
+        .id-n1    { color: #2979FF; }
+        .id-slide { color: #E65100; }
+        .id-n2    { color: #00897B; }
+        .id-n3    { color: #8E24AA; }
+
+
+        .tuning-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+            gap: 1px 6px;
+            max-height: 11rem;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 0.4rem;
+        }
+        .tuning-grid label {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 12px;
+        }
+        .tuning-grid label span {
+            width: 2.5em;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .tuning-grid input {
+            width: 72px;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 1px 3px;
+        }
+        .tuning-tools {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 12px;
+            padding: 0.3rem 0;
+        }
+        .tuning-tools input {
+            font-family: monospace;
+            font-size: 12px;
+            width: 4.5em;
+            padding: 1px 3px;
+        }
+        .tuning-tools button {
+            font-size: 12px;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .custom-notes textarea {
+            width: 100%;
+            height: 5rem;
+            font-family: monospace;
+            font-size: 12px;
+            padding: 0.4rem;
+            resize: vertical;
+            border: 1px solid #ccc;
+        }
+        #customErrors {
+            font-size: 11px;
+            color: #c00;
+            padding: 0 0.1rem;
+        }
+    </style>
+  <script type="module" crossorigin src="/assets/index-Cmr3Cm4J.js"></script>
+</head>
+<body>
+    <div class="cheatsheet">
+        <h4>Header</h4>
+        <code>L:1/8</code> default note length
+
+        <h4>Channels</h4>
+        <code>Name| notes...</code>
+        <br><code>Name|voice| notes...</code>
+        <br><code>voice| notes...</code>
+        <br>Voices: sine, triangle/tri,
+        <br>square, sawtooth/saw
+
+        <h4>Notes</h4>
+        <code>C4:</code> <code>F#3:</code> <code>Bb5:</code>
+        <br>A-G, optional # or b, octave
+        <br><code>440:</code> raw Hz
+        <br><code>C4+50:</code> 50 cents sharp
+        <br><code>Bb3-20:</code> 20 cents flat
+
+        <h4>Duration</h4>
+        <code>C4:8</code> = 8 units
+        <br><code>C4:</code> = 1 unit (default)
+        <br><code>C4:/2</code> = half unit
+        <br><code>C4:3/2</code> = 1.5 units
+        <br><code>C4:0</code> = tone anchor (no sustain)
+        <br>At L:1/8, 1 unit = eighth note
+
+        <h4>Volume</h4>
+        <code>C4:8=50</code> 50% volume
+        <br>0-100, slides interpolate
+        <br>
+        <br><code>!C4:8</code> accented strike
+        <br>200% vol, decays to 100%
+        <br>over first 1/8th of note
+        <br>
+        <br><code>S:8</code> = 8 units silence
+
+        <h4>Steps</h4>
+        <code>C4:4>E4:4</code>
+        <br>Note to note = release + strike
+
+        <h4>Slides</h4>
+        <code>C4:4>lin:4>E4:4</code>
+        <br>Glissando with given easing
+        <br>type between notes
+
+        <h4>Easings</h4>
+        <div id="easingSparklines" class="easing-list"></div>
+
+        <h4>Custom notes</h4>
+        <code>blue = Bb3+30</code>
+        <br>Accepts numbers for Hz
+        <br>or note+/-cents
+
+        <h4>Tuning</h4>
+        12-TET or Just Intonation
+        <br>N-EDO scale generator
+        <br>Notes without an assigned
+        <br>pitch will not sound.
+    </div>
+
+    <div class="main">
+    <h1>Rechorder</h1>
+
+    <div class="intro">
+        <div class="intro-format">
+            Each line is a channel. Elements are <code>note:duration=vol</code> or <code>transition:duration</code> joined by <code>&gt;</code>. Volume is optional.
+        </div>
+        <div class="intro-example"><span class="ie-label">my_lead|saw|</span> <span class="ie-n1">f3:8=100</span><span class="ie-sep">&gt;</span><span class="ie-slide">lin:16</span><span class="ie-sep">&gt;</span><span class="ie-n2">g3:24=50</span><span class="ie-sep">&gt;</span><span class="ie-n3">c4:8</span></div>
+        <div class="intro-desc">
+            <span class="id-label">my_lead|saw|</span> channel name + sawtooth voice<br>
+            <span class="id-n1">f3:8=100</span> play F3 for 8 counts at full volume<br>
+            <span class="id-slide">lin:16</span> linear glissando over 16 counts<br>
+            <span class="id-n2">g3:24=50</span> arrive at G3 for 24 counts at half volume<br>
+            <span class="id-n3">c4:8</span> step (release + restrike) to C4 for 8 counts
+        </div>
+    </div>
+
+    <div id="editor"></div>
+
+    <div class="controls">
+        <label>
+            Filter:
+            <span id="filterLowVal">0</span>Hz
+            <div class="dual-range">
+                <input type="range" id="filterLow" min="0" max="100" value="0">
+                <input type="range" id="filterHigh" min="0" max="100" value="100">
+            </div>
+            <span id="filterHighVal">22k</span>Hz
+        </label>
+    </div>
+    <div class="controls">
+        <label><input type="checkbox" id="reverb" checked> Reverb</label>
+        <label>
+            Duration:
+            <input type="range" id="reverbDuration" min="0.5" max="6" step="0.1" value="1">
+            <span id="reverbDurVal">1.0</span>s
+        </label>
+        <label>
+            Wet:
+            <input type="range" id="reverbWet" min="0" max="100" value="60">
+            <span id="reverbWetVal">60</span>%
+        </label>
+    </div>
+
+    <div class="controls">
+        <button id="playStop">Play</button>
+        <button id="playFrom" style="display:none">Play from here</button>
+        <label>
+            BPM:
+            <input type="range" id="bpm" min="20" max="300" value="140">
+            <span id="bpmVal">140</span>
+        </label>
+        <button id="autoformat">Autoformat</button>
+        <button id="saveUrl">Save to URL</button>
+        <span id="position"></span>
+    </div>
+
+    <div id="parseErrors"></div>
+
+    <div class="section-header">
+        <h3>Timeline [example song: Want To Love (Just Raw) by Aloboi]</h3>
+    </div>
+    <div id="timelineWrap" class="timeline-wrap">
+        <canvas id="timelineCanvas"></canvas>
+        <div id="playhead" class="timeline-playhead" style="display:none"></div>
+    </div>
+
+    <div class="section-header">
+        <h3>Tuning</h3>
+        <select id="tuningPreset">
+            <option value="12tet">12-TET</option>
+            <option value="just">Just Intonation</option>
+        </select>
+        <button id="clearTuning">Clear</button>
+    </div>
+    <div id="tuningGrid" class="tuning-grid"></div>
+
+    <div class="section-header">
+        <h3>Scale Generator</h3>
+    </div>
+    <div class="tuning-tools">
+        <label>Divisions/octave <input id="edoDivisions" type="number" value="19" min="2" max="96"></label>
+        <label>From <input id="edoStart" type="text" value="C2" style="width:3.5em"></label>
+        <label>Octaves <input id="edoOctaves" type="number" value="5" min="1" max="8"></label>
+        <button id="generateEdo">Generate into Custom Notes</button>
+    </div>
+
+    <div class="section-header">
+        <h3>Custom Notes</h3>
+        <button id="clearCustom">Clear</button>
+    </div>
+    <div class="custom-notes">
+        <textarea id="customNotes" spellcheck="false" placeholder="name = Hz or note&#10;blue = Bb3+30&#10;qflat = C4-50&#10;drone = 432"></textarea>
+    </div>
+    <div id="customErrors"></div>
+
+    </div><!-- .main -->
+
+</body>
+</html>
