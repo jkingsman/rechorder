@@ -230,7 +230,7 @@ export class Player {
             gainR.gain.value = 0;
 
             const state = getStateAtPosition(channels[i].segments, startPos);
-            if (state) osc.frequency.value = state.freq;
+            if (state && state.freq > 0) osc.frequency.value = state.freq;
 
             osc.start();
             this.nodes.push({ osc, gainL, gainR, baseGain: perCh, lastSegIndex: null, lastPanL: null, lastPanR: null });
@@ -294,7 +294,7 @@ export class Player {
                     node.gainR.gain.value = targetR;
                 }
 
-                node.osc.frequency.value = state.freq;
+                if (state.freq > 0) node.osc.frequency.value = state.freq;
                 node.lastSegIndex = state.segIndex;
             } else {
                 const t = this.ctx.currentTime;
